@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Box } from '@mui/material';
-import axios from 'axios';
+import api from '../api';
 
 export default function PurchaseHistory() {
     const [purchases, setPurchases] = useState([]);
@@ -8,7 +8,7 @@ export default function PurchaseHistory() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get('/api/purchases')
+        api.get('/api/purchases')
             .then(res => {
                 setPurchases(res.data.purchases || []);
                 setLoading(false);

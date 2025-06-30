@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Typography, Card, CardContent, Button, CircularProgress, Box } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import axios from 'axios';
+import api from '../api';
 
 export default function ProductDetails() {
     const { id } = useParams();
@@ -11,7 +11,7 @@ export default function ProductDetails() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get(`/api/products/${id}`)
+        api.get(`/api/products/${id}`)
             .then(res => {
                 setProduct(res.data.product || res.data);
                 setLoading(false);

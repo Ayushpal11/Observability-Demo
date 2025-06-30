@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Typography, Box, CircularProgress, Alert, Paper } from '@mui/material';
-import axios from 'axios';
+import api from '../api'; // Import the central API instance
 
 export default function HealthCheck() {
     const [status, setStatus] = useState(null);
@@ -8,7 +8,7 @@ export default function HealthCheck() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get('/health')
+        api.get('/health') // Use the 'api' instance
             .then(res => {
                 setStatus(res.data.status);
                 setLoading(false);

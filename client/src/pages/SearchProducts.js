@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Typography, TextField, Button, Box, Grid, Card, CardContent, CircularProgress, Paper } from '@mui/material';
-import axios from 'axios';
+import api from '../api';
 
 export default function SearchProducts() {
     const [form, setForm] = useState({ q: '', category: '', minPrice: '', maxPrice: '' });
@@ -18,7 +18,7 @@ export default function SearchProducts() {
         setError(null);
         setResults([]);
         try {
-            const res = await axios.get('/api/search', { params: form });
+            const res = await api.get('/api/search', { params: form });
             setResults(res.data.products || []);
         } catch (err) {
             setError('Failed to search products');

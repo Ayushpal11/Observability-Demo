@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Typography, TextField, Button, Box, Alert, Paper } from '@mui/material';
-import axios from 'axios';
+import api from '../api';
 
 export default function CreateProduct() {
     const [form, setForm] = useState({ name: '', price: '', stock: '', category: '' });
@@ -18,7 +18,7 @@ export default function CreateProduct() {
         setSuccess(null);
         setError(null);
         try {
-            const res = await axios.post('/api/products', form);
+            const res = await api.post('/api/products', form);
             setSuccess(`Product "${res.data.product.name}" created!`);
             setForm({ name: '', price: '', stock: '', category: '' });
         } catch (err) {

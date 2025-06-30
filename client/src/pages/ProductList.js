@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Typography, Grid, Card, CardContent, CardActions, Button, CircularProgress, Box } from '@mui/material';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 
 export default function ProductList() {
     const [products, setProducts] = useState([]);
@@ -9,7 +9,7 @@ export default function ProductList() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get('/api/products')
+        api.get('/api/products')
             .then(res => {
                 setProducts(res.data.products || res.data);
                 setLoading(false);
