@@ -152,15 +152,6 @@ After repeated downtime, you need more than logs—you need to see, trace, and m
 
 ---
 
-## 📝 Assignment Submission
-
-- **This project is ready for submission.**
-- **Tutorial narrative and codebase are up-to-date and production-grade.**
-- **Submit your assignment using the following Google Form:**
-  [https://docs.google.com/forms/d/e/1FAIpQLSd25Y-7zdjfveXkr5weJcblfucC-ViCPvKpU_YYx1b29U4ajQ/viewform?usp=dialog](https://docs.google.com/forms/d/e/1FAIpQLSd25Y-7zdjfveXkr5weJcblfucC-ViCPvKpU_YYx1b29U4ajQ/viewform?usp=dialog)
-
----
-
 ## 📚 Resources
 - [OpenTelemetry Docs](https://opentelemetry.io/docs/)
 - [SigNoz Docs](https://signoz.io/docs/)
