@@ -1,0 +1,149 @@
+version: '3.8'
+
+services:
+  # SigNoz Backend Services
+  clickhouse:
+    image: clickhouse/clickhouse-server:22.3.13.5-alpine
+    container_name: signoz-clickhouse
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    environment:
+      - CLICKHOUSE_DB=signoz_traces
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse/clickhouse-config.xml:/etc/clickhouse-server/config.d/signoz.xml
+    command: [ "--config-file=/etc/clickhouse-server/config.xml" ]
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.88.0
+    container_name: signoz-otel-collector
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # OTLP HTTP
+      - "4318:4318" # OTLP gRPC
+      - "8888:8888" # Prometheus metrics
+      - "8889:8889" # Prometheus metrics
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:13133" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  query-service:
+    image: signoz/query-service:0.88.0
+    container_name: signoz-query-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SIGNOZ_OTLP_ENDPOINT=http://localhost:4318
+      - SIGNOZ_QUERY_SERVICE_PORT=8080
+      - SIGNOZ_CLICKHOUSE_URL=clickhouse://clickhouse:9000?dial_timeout=200ms&max_execution_time=60
+      - SIGNOZ_CLICKHOUSE_DATABASE=signoz_traces
+      - SIGNOZ_CLICKHOUSE_USERNAME=default
+      - SIGNOZ_CLICKHOUSE_PASSWORD=
+      - SIGNOZ_REDIS_URL=redis://redis:6379
+      - SIGNOZ_ALERTMANAGER_API_URL=http://alertmanager:9093
+      - SIGNOZ_PROMETHEUS_API_URL=http://prometheus:9090
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/ready" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    image: signoz/frontend:0.88.0
+    container_name: signoz-frontend
+    ports:
+      - "3301:80"
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8080
+    depends_on:
+      query-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Supporting Services
+  redis:
+    image: redis:7.0-alpine
+    container_name: signoz-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: signoz-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: signoz-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.enable-lifecycle'
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  clickhouse-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  alertmanager-data:
+    driver: local
+
+networks:
+  default:
+    name: signoz-network
